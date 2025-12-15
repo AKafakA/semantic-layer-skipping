@@ -2,6 +2,28 @@
 
 This document contains a log of notes for meetings throughout the project, sorted by date (most recent first).
 
+### 2025-12-15
+
+**TransformerLens** - for initial profiling and insights: e.g. do we see huge attention variance spikes.
+- If results are highly dynamic, then a model-free skipping approach may need to be rethought.
+- Models to test on: Qwen families, e.g. Qwen3 has both MoE and non-Moe (e.g., MoE-7B)
+
+**PyTorch Prototype** - following insights, prototype layer skipping approach can be implemented in PyTorch, potentially with a model-free approach.
+
+**Second Stage** - not necessarily coupled with the initial design and approach from above results. More systems-focused and integration with vLLM - will be refined further once stage 1 is complete.
+
+**GPU Resources** - for initial experiments and models, e.g., smaller Qwen-0.5B models, Google Colab GPU/TPU is sufficient. Department GPU cluster is not necessary immediately for initial experiments, although would be useful for later. Other GPU resources exist as well.
+
+**Literature review** - good to draft at these stages (on Overleaf), to make it easier to get feedback and write up later.
+- Currently, general LLM serving survey is complete (see pdf in docs), and is sufficient to proceed with initial stage 1 experiments.
+- Further reviews can be done on: (i) algorithmic side of layer skipping (see reference papers in references.bib), (ii) (for stage 2) systems side of layer skipping, and (iii) additional related papers like LLM caching (see references.bib)
+
+**Datasets** - additional notes on primary datasets to consider:
+- vLLM benchmarks - high-quality benchmark suite, focused on system side, but will give a good idea on how benchmarks are structured.
+- MoE-CAP - new dataset, with focus on MoE models, and systems tradeoffs. Good to explore for both stages.
+
+**Current goal:** by end of January, have initial profiling with TransformerLens and design of layer skipping approach. If model-free approach is feasible, then prototype implementation can be started as well. Insights can be done on larger models later. Draft of approach can be started as well.
+
 
 ### 2025-12-08
 
