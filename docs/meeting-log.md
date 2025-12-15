@@ -6,7 +6,7 @@ This document contains a log of notes for meetings throughout the project, sorte
 
 **TransformerLens** - for initial profiling and insights: e.g. do we see huge attention variance spikes.
 - If results are highly dynamic, then a model-free skipping approach may need to be rethought.
-- Models to test on: Qwen families, e.g. Qwen3 has both MoE and non-Moe (e.g., MoE-7B)
+- Models to test on: Qwen families (both MoE and non-MoE), e.g. [Qwen1.5-MoE-A2-7B](https://huggingface.co/Qwen/Qwen1.5-MoE-A2.7B), and larger [Qwen3](https://arxiv.org/pdf/2505.09388) models (30B or 235B for MoE)
 
 **PyTorch Prototype** - following insights, prototype layer skipping approach can be implemented in PyTorch, potentially with a model-free approach.
 
