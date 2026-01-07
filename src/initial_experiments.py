@@ -19,7 +19,6 @@ class EarlyExitAnalyser:
             fold_ln=False,
             center_writing_weights=False,
             center_unembed=False,
-            trust_remote_code=True
         )
         self.model.eval()
         print("Model loaded successfully.")
