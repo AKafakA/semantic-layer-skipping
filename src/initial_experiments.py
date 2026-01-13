@@ -7,12 +7,10 @@ import matplotlib.pyplot as plt
 from typing import List, Dict, Any, Optional
 from transformers import AutoTokenizer
 
-from utils import get_device
+from utils import get_device, PLOTS_DIR
 from store import SkippingVectorDB
-from strategies import SkipDecision, SkipAction, EarlyExitStrategy, StrictMatchStrategy, KLDivergenceStrategy
+from strategies import SkipDecision, SkipAction, EarlyExitStrategy, StrictMatchStrategy
 
-
-PLOTS_DIR = "plots"
 
 class EarlyExitAnalyser:
     def __init__(self, model_name: str = "Qwen/Qwen2.5-1.5B-Instruct", device: Optional[str] = None):
@@ -177,8 +175,7 @@ def plot_layer_divergence(analysis_results: List[Dict[str, Any]], kl_cap: float 
     plt.grid(True, alpha=0.3)
 
     os.makedirs(PLOTS_DIR, exist_ok=True)
-    plt.savefig(f"{PLOTS_DIR}/early_exit_analysis.pdf")
-    plt.show()
+    plt.savefig(f"{PLOTS_DIR}/early_exit_analysis.png")
 
 
 if __name__ == "__main__":
@@ -193,7 +190,7 @@ if __name__ == "__main__":
     prompts = [
         "[QUESTION]: What is the capital of France?\n[ANSWER]:",
         "[QUESTION]: Which university did Isaac Newton go to?\n[ANSWER]:",
-        "[QUESTION]: The fundamental theory of relativity was proposed by who?\n[ANSWER]:",
+        "[QUESTION]: Who proposed the fundamental theory of relativity?\n[ANSWER]:",
     ]
     test_prompts = prompts
 

@@ -1,5 +1,8 @@
 import torch
 
+
+PLOTS_DIR = "plots"
+
 def get_device():
     """Utility function to get the available device (GPU if available, else CPU)."""
     if torch.cuda.is_available():
