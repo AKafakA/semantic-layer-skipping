@@ -10,11 +10,11 @@ This document contains a log of notes for meetings throughout the project, sorte
     chunked prefills and writing your own kernels (CUDA or Triton).
 
 **Adaptive Layer Importance** - [Initial results](https://github.com/AKafakA/semantic-layer-skipping/pull/2#issuecomment-3741078839) 
-            show that Importance of layers can be token-dependent, so can we find importance of layers, and decide whether boundary checkpoints can be decided. 
-            Also, it shows you need online table lookup since this is adaptive.
+show that Importance of layers can be token-dependent, so can we find importance of layers, and decide whether boundary checkpoints can be decided. 
+Also, it shows you need online table lookup since this is adaptive.
 
 **Interleaved execution** - Within block, we can interleave and execute only a small set of these, e.g., skip every other layer (see PR results from above, indicating we can skip 1 layer fairly frequently, across layers)
-   - Similar ideas to partitioned pipeline parallelism: Megatron-LM papers [first](https://arxiv.org/pdf/1909.08053) and the more-relevant [second](https://arxiv.org/pdf/1909.08053). 
+   - Similar ideas to partitioned pipeline parallelism: Megatron-LM papers [first](https://arxiv.org/pdf/1909.08053) and the more-relevant [second](https://arxiv.org/pdf/2104.04473). 
       Also, the micro-batch pipeline parallelism paper [GPipe](https://arxiv.org/pdf/1811.06965)
    - Interleaved partitioning or continuous partitioning.
    - However:
@@ -24,16 +24,14 @@ This document contains a log of notes for meetings throughout the project, sorte
 **Offline profiling** - deciding which layers to be the checkpoints for block skipping.
    - Can initially decide manually, based on profiling results, to determine most important layers.
    - Or, can use automatic algorithms, e.g., based on clustering of layer importance scores across many tokens/requests. Some ideas in [Alpa paper](https://www.usenix.org/system/files/osdi22-zheng-lianmin.pdf)
-    
 
 **Vector DB** - exact GPU, IVF-PQ, HNSW, GPU-based: these can be experimented with as an ablation studies.
    - Considerations: top-k accuracy, throughput limitations (CPU-GPU transfer), memory usage in GPU.
 
-**Interpretability** - can we understand why certain layers are more important than others, linking to Transformer architecture and algorithms, rather than empirical reuslts.
+**Interpretability** - can we understand why certain layers are more important than others, linking to Transformer architecture and algorithms, rather than empirical results.
    - Can we connect to existing literature on layer importance, e.g., [ShortGPT](https://arxiv.org/abs/2403.03853).
-   - Considering Transformer interpetability, feature visualisations etc.
-   - These insights are based on initial experioments where first layers perform minimal updates beyond token embeddding.
-
+   - Considering Transformer interpretability, feature visualisations etc.
+   - These insights are based on initial experiments where first layers perform minimal updates beyond token embedding.
 
 ### 2026-01-16
 
