@@ -30,7 +30,7 @@ Also, it shows you need online table lookup since this is adaptive.
 
 **Interpretability** - can we understand why certain layers are more important than others, linking to Transformer architecture and algorithms, rather than empirical results.
    - Can we connect to existing literature on layer importance, e.g., [ShortGPT](https://arxiv.org/abs/2403.03853).
-   - Considering Transformer interpretability, feature visualisations etc.
+   - Considering Transformer interpretability, feature visualisations etc., for example [layer importance paper](https://aclanthology.org/2024.blackboxnlp-1.29/) 
    - These insights are based on initial experiments where first layers perform minimal updates beyond token embedding.
 
 ### 2026-01-16
