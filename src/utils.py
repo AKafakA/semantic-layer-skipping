@@ -1,6 +1,5 @@
 import torch
 
-
 PLOTS_DIR = "plots"
 
 
@@ -32,6 +31,7 @@ PROMPTS = [
 def question_to_prompt(question: str) -> str:
     """Converts a question into a standard prompt format."""
     return f"[QUESTION]: {question}\n[ANSWER]: "
+
 
 def get_device():
     """Utility function to get the available device (GPU if available, else CPU)."""

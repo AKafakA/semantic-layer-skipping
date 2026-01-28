@@ -1,15 +1,16 @@
-import torch
-import torch.nn.functional as F
-from enum import Enum, auto
 from dataclasses import dataclass
+from enum import Enum, auto
+
+import torch
+import torch.nn.functional as functional
 
 
 # --- Skipping Decision ---
-
 class Action(Enum):
-    CONTINUE = auto() # TODO: do we want to store this case in DBs?
+    CONTINUE = auto()  # TODO: do we want to store this case in DBs?
     EXIT = auto()
     SKIP = auto()
+
 
 @dataclass
 class SkipDecision:
@@ -31,17 +32,22 @@ class SkipStrategyMode(Enum):
 
 # --- Early Exit Strategies ---
 
+
 class EarlyExitStrategy:
     """Base class for deciding if a token is 'finished'."""
 
-    def should_exit(self, early_logits: torch.Tensor, final_logits: torch.Tensor) -> bool:
+    def should_exit(
+        self, early_logits: torch.Tensor, final_logits: torch.Tensor
+    ) -> bool:
         raise NotImplementedError
 
 
 class StrictMatchStrategy(EarlyExitStrategy):
     """Exits only if the predicted token is EXACTLY the same."""
 
-    def should_exit(self, early_logits: torch.Tensor, final_logits: torch.Tensor) -> bool:
+    def should_exit(
+        self, early_logits: torch.Tensor, final_logits: torch.Tensor
+    ) -> bool:
         early_token = torch.argmax(early_logits).item()
         final_token = torch.argmax(final_logits).item()
         return early_token == final_token
@@ -53,10 +59,12 @@ class KLDivergenceStrategy(EarlyExitStrategy):
     def __init__(self, threshold: float = 2):
         self.threshold = threshold
 
-    def should_exit(self, early_logits: torch.Tensor, final_logits: torch.Tensor) -> bool:
+    def should_exit(
+        self, early_logits: torch.Tensor, final_logits: torch.Tensor
+    ) -> bool:
         # KL expects log_probs as input, and standard probs as target
-        log_early = F.log_softmax(early_logits, dim=-1)
-        probs_final = F.softmax(final_logits, dim=-1)
+        log_early = functional.log_softmax(early_logits, dim=-1)
+        probs_final = functional.softmax(final_logits, dim=-1)
 
-        kl = F.kl_div(log_early, probs_final, reduction='sum').item()
+        kl = functional.kl_div(log_early, probs_final, reduction="sum").item()
         return kl < self.threshold

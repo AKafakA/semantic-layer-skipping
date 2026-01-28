@@ -1,20 +1,18 @@
-import faiss
-import numpy as np
+import logging
 import os
-from typing import List, Dict, Optional
 from dataclasses import dataclass
 
-import logging
+import faiss
+import numpy as np
 
-from strategies import SkipDecision, Action
-
+from strategies import Action, SkipDecision
 
 # usage of 'faiss-cpu' and 'torch/numpy' results in OpenMP runtime conflicts.
 # this setting allows the code to run, but may have performance implications.
 # see known issues: https://github.com/faiss-wheels/faiss-wheels/issues/40
 # and: https://github.com/peterwittek/somoclu/issues/135
 # TODO: consider whether switching uv to conda is worthwhile and works around this
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 
 @dataclass
@@ -23,14 +21,17 @@ class SearchResult:
     decision: SkipDecision
 
     def __str__(self):
-        return f"SearchResult(similarity={self.similarity:.2f}, decision={self.decision})"
+        return (
+            f"SearchResult(similarity={self.similarity:.2f}, decision={self.decision})"
+        )
+
 
 class SkippingVectorDB:
-    def __init__(self, n_checkpoints: int, vector_dim: int, device: str = 'cpu'):
+    def __init__(self, n_checkpoints: int, vector_dim: int, device: str = "cpu"):
         self.n_layers = n_checkpoints
         self.vector_dim = vector_dim
 
-        if device == 'cuda':
+        if device == "cuda":
             logging.error("FAISS GPU support not yet implemented in this snippet.")
             pass
 
@@ -38,23 +39,22 @@ class SkippingVectorDB:
         # TODO: experiment with index types
         # TODO: experiment with dimension reduction
         # TODO: experiment with other similarity metrics (currently cosine via IP)
-        self.indexes = [
-            faiss.IndexFlatIP(vector_dim) for _ in range(n_checkpoints)
-        ]
+        self.indexes = [faiss.IndexFlatIP(vector_dim) for _ in range(n_checkpoints)]
 
         # metadata storage
         # maps (layer, vector_id) -> SkipDecision
-        self.metadata: List[Dict[int, SkipDecision]] = [{} for _ in range(n_checkpoints)]
+        self.metadata: list[dict[int, SkipDecision]] = [
+            {} for _ in range(n_checkpoints)
+        ]
 
-    def add_vector(self,
-                   layer_idx: int,
-                   vector: np.ndarray,
-                   decision: SkipDecision):
+    def add_vector(self, layer_idx: int, vector: np.ndarray, decision: SkipDecision):
         """
         Adds a vector and its associated skip decision to the DB.
         """
         if layer_idx >= self.n_layers:
-            raise ValueError(f"Layer {layer_idx} out of bounds (Max {self.n_layers - 1})")
+            raise ValueError(
+                f"Layer {layer_idx} out of bounds (Max {self.n_layers - 1})"
+            )
 
         # normalise vector for cosine similarity
         faiss.normalize_L2(vector)
@@ -66,12 +66,14 @@ class SkippingVectorDB:
         index.add(vector)
         self.metadata[layer_idx][current_id] = decision
 
-    def search(self,
-               layer_idx: int,
-               query_vector: np.ndarray,
-               ) -> Optional[SearchResult]:
+    def search(
+        self,
+        layer_idx: int,
+        query_vector: np.ndarray,
+    ) -> SearchResult | None:
         """
-        Searches for a similar vector. Returns the similarity and associated SkipDecision if found.
+        Searches for a similar vector.
+        Returns the similarity and associated SkipDecision if found.
         """
         index = self.indexes[layer_idx]
         if index.ntotal == 0:
@@ -99,7 +101,7 @@ if __name__ == "__main__":
     db = SkippingVectorDB(n_checkpoints=24, vector_dim=768)
 
     # create a dummy vector and decision
-    vec = np.random.rand(1, 768).astype('float32')
+    vec = np.random.rand(1, 768).astype("float32")
     decision = SkipDecision(action=Action.SKIP, skip_count=5)
 
     # add to DB

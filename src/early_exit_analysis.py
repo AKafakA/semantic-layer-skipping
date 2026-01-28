@@ -1,19 +1,22 @@
 import logging
 import os
-import torch
-import torch.nn.functional as F
-from transformer_lens import HookedTransformer
+from typing import Any
+
 import matplotlib.pyplot as plt
-from typing import List, Dict, Any, Optional
+import torch
+import torch.nn.functional as functional
+from transformer_lens import HookedTransformer
 from transformers import AutoTokenizer
 
-from utils import get_device, PLOTS_DIR
 from store import SkippingVectorDB
-from strategies import SkipDecision, Action, EarlyExitStrategy, StrictMatchStrategy
+from strategies import Action, EarlyExitStrategy, SkipDecision, StrictMatchStrategy
+from utils import PLOTS_DIR, get_device
 
 
 class EarlyExitAnalyser:
-    def __init__(self, model_name: str = "Qwen/Qwen2.5-1.5B-Instruct", device: Optional[str] = None):
+    def __init__(
+        self, model_name: str = "Qwen/Qwen2.5-1.5B-Instruct", device: str | None = None
+    ):
         """
         Initialises the model and puts it in evaluation mode.
         """
@@ -42,10 +45,12 @@ class EarlyExitAnalyser:
         logits = self.model.unembed(normalised_state)
         return logits
 
-    def analyse_prompt(self, prompt: str,
-                       vector_db: Optional[SkippingVectorDB] = None,
-                       early_exit_strategy: Optional[EarlyExitStrategy] = None
-                       ) -> Dict[str, Any]:
+    def analyse_prompt(
+        self,
+        prompt: str,
+        vector_db: SkippingVectorDB | None = None,
+        early_exit_strategy: EarlyExitStrategy | None = None,
+    ) -> dict[str, Any]:
         """
         Runs a single prompt and calculates exit metrics for EVERY layer,
         specifically for the LAST token (next-token prediction).
@@ -55,8 +60,8 @@ class EarlyExitAnalyser:
         final_logits, cache = self.model.run_with_cache(prompt, return_type="logits")
 
         # get the final token's logits, probs, and predicted token id
-        target_final_logits = final_logits[0, -1, :] # shape: (vocab_size,)
-        target_probs = F.softmax(target_final_logits, dim=-1)
+        target_final_logits = final_logits[0, -1, :]  # shape: (vocab_size,)
+        target_probs = functional.softmax(target_final_logits, dim=-1)
         target_token_id = torch.argmax(target_final_logits).item()
 
         n_layers = self.model.cfg.n_layers
@@ -67,7 +72,7 @@ class EarlyExitAnalyser:
             "layer_indices": list(range(n_layers)),
             "prompt": prompt,
             "final_predicted_token": self.model.to_string(target_token_id),
-            "db_actions": []
+            "db_actions": [],
         }
 
         # 2. iterate through every layer's output
@@ -84,13 +89,14 @@ class EarlyExitAnalyser:
             early_token_id = torch.argmax(early_logits).item()
 
             # 4. metric: Strict Match (did we get the same token?)
-            is_match = (early_token_id == target_token_id)
+            is_match = early_token_id == target_token_id
 
             # 5. metric: KL Divergence
-            kl = F.kl_div(
-                F.log_softmax(early_logits, dim=-1), # convert logits to log_probs
+            kl = functional.kl_div(
+                # convert logits to log_probs
+                functional.log_softmax(early_logits, dim=-1),
                 target_probs,
-                reduction='sum'
+                reduction="sum",
             ).item()
 
             # store data
@@ -100,17 +106,25 @@ class EarlyExitAnalyser:
 
             # 6. vector DB population logic
             if vector_db and early_exit_strategy:
-                should_exit = early_exit_strategy.should_exit(early_logits, target_final_logits)
+                should_exit = early_exit_strategy.should_exit(
+                    early_logits, target_final_logits
+                )
                 if should_exit:
-                    logging.info(f"    [DB] Layer {i}: Early exit condition met by strategy.")
+                    logging.info(
+                        f"    [DB] Layer {i}: Early exit condition met by strategy."
+                    )
 
                     # extract vector for DB storage (convert to numpy)
-                    vector_np = resid_pre.detach().cpu().numpy().reshape(1, -1)  # shape: (1, hidden)
+                    vector_np = (
+                        resid_pre.detach().cpu().numpy().reshape(1, -1)
+                    )  # shape: (1, hidden)
 
                     decision = SkipDecision(action=Action.EXIT)
                     results["db_actions"].append(decision)
 
-                    vector_db.add_vector(layer_idx=i, vector=vector_np, decision=decision)
+                    vector_db.add_vector(
+                        layer_idx=i, vector=vector_np, decision=decision
+                    )
 
                 else:
                     # we could also store CONTINUE decisions if desired
@@ -129,18 +143,20 @@ class EarlyExitAnalyser:
 def apply_chat_template(prompt: str, model_name: str) -> str:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     messages = [
-        {"role": "system", "content": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."},
-        {"role": "user", "content": prompt}
+        {
+            "role": "system",
+            "content": "You are Qwen, created by Alibaba Cloud. "
+            "You are a helpful assistant.",
+        },
+        {"role": "user", "content": prompt},
     ]
     text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
+        messages, tokenize=False, add_generation_prompt=True
     )
     return text
 
 
-def plot_layer_divergence(analysis_results: List[Dict[str, Any]], kl_cap: float = 10.0):
+def plot_layer_divergence(analysis_results: list[dict[str, Any]], kl_cap: float = 10.0):
     """
     Plots KL Divergence and Accuracy logic across layers for multiple prompts.
     """
@@ -154,7 +170,7 @@ def plot_layer_divergence(analysis_results: List[Dict[str, Any]], kl_cap: float 
         # cut off extremely high KL values for readability (first few layers are random)
         kl = [min(k, kl_cap) for k in kl]
         label_text = f"Prompt: '{res['prompt'][:15]}...'"
-        plt.plot(layers, kl, marker='o', label=label_text)
+        plt.plot(layers, kl, marker="o", label=label_text)
 
     plt.title("Soft Metric: KL Divergence vs. Depth")
     plt.xlabel("Transformer Layer")
@@ -167,7 +183,7 @@ def plot_layer_divergence(analysis_results: List[Dict[str, Any]], kl_cap: float 
     for res in analysis_results:
         layers = res["layer_indices"]
         matches = [1 if x else 0 for x in res["strict_match"]]
-        plt.plot(layers, matches, marker='s', linestyle='--', alpha=0.7)
+        plt.plot(layers, matches, marker="s", linestyle="--", alpha=0.7)
 
     plt.title("Strict Metric: Token Match")
     plt.xlabel("Transformer Layer")
@@ -188,22 +204,24 @@ if __name__ == "__main__":
     analyser = EarlyExitAnalyser(model_name=model_name)
 
     prompts = [
-        #"[QUESTION]: What is the capital of France?\n[ANSWER]:",
+        # "[QUESTION]: What is the capital of France?\n[ANSWER]:",
         "[QUESTION]: Which university did Isaac Newton go to?\n[ANSWER]:",
-        #"[QUESTION]: Who proposed the fundamental theory of relativity?\n[ANSWER]:",
+        # "[QUESTION]: Who proposed the fundamental theory of relativity?\n[ANSWER]:",
     ]
     test_prompts = prompts
 
-
-    vector_db = SkippingVectorDB(n_checkpoints=analyser.model.cfg.n_layers,
-                                 vector_dim=analyser.model.cfg.d_model)
+    vector_db = SkippingVectorDB(
+        n_checkpoints=analyser.model.cfg.n_layers, vector_dim=analyser.model.cfg.d_model
+    )
     strategy = StrictMatchStrategy()
 
     all_results = []
     logging.info("\nStarting Analysis...")
     for prompt in test_prompts:
         logging.info(f"Analysing: '{prompt}'")
-        res = analyser.analyse_prompt(prompt, vector_db=vector_db, early_exit_strategy=strategy)
+        res = analyser.analyse_prompt(
+            prompt, vector_db=vector_db, early_exit_strategy=strategy
+        )
         all_results.append(res)
 
         try:
