@@ -4,14 +4,13 @@ import torch
 import torch.nn.functional as functional
 from transformer_lens import HookedTransformer
 
-from store import SkippingVectorDB
-from strategies import (
-    Action,
+from inference.strategies import (
     EarlyExitStrategy,
-    SkipDecision,
     SkipStrategyMode,
     StrictMatchStrategy,
 )
+from store import SkippingVectorDB
+from structures import Action, SkipDecision
 from utils import ISAAC_NEWTON_QUESTIONS, get_device, question_to_prompt
 
 

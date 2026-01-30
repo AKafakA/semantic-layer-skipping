@@ -8,8 +8,9 @@ import torch.nn.functional as functional
 from transformer_lens import HookedTransformer
 from transformers import AutoTokenizer
 
+from inference.strategies import EarlyExitStrategy, StrictMatchStrategy
 from store import SkippingVectorDB
-from strategies import Action, EarlyExitStrategy, SkipDecision, StrictMatchStrategy
+from structures import Action, SkipDecision
 from utils import PLOTS_DIR, get_device
 
 

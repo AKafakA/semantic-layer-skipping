@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import faiss
 import numpy as np
 
-from strategies import Action, SkipDecision
+from structures import Action, SkipDecision
 
 # usage of 'faiss-cpu' and 'torch/numpy' results in OpenMP runtime conflicts.
 # this setting allows the code to run, but may have performance implications.
